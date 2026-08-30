@@ -1,4 +1,4 @@
-export async function createPRComment({
+module.exports.createPRComment = async function ({
   token,
   owner,
   repo,

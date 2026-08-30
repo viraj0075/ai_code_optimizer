@@ -1,2 +1,4 @@
-export { createPRComment } from "./comment.js";
-export { formatAIComment } from "./commentFormatter.js";
+module.exports = {
+  createPRComment: require("./comment.js").createPRComment,
+  formatAIComment: require("./commentFormatter.js").formatAIComment
+};

@@ -1,4 +1,4 @@
-export function calculateCosts(jobs) {
+module.exports = function calculateCosts(jobs) {
   let totalCost = 0;
 
   const analyzedJobs =

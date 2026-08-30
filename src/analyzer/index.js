@@ -1,6 +1,4 @@
-export {
-  calculateCosts,
-} from "./costCalculator.js";
-export {
-  analyzeWorkflows,
-} from "./workflowAnalyzer.js";
+module.exports = {
+  calculateCosts: require("./costCalculator.js"),
+  analyzeWorkflows: require("./workflowAnalyzer.js"),
+};

@@ -1,8 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
-import * as yaml from "js-yaml";
+const fs = require("node:fs");
+const path = require("node:path");
+const yaml = require("js-yaml");
 
-export async function analyzeWorkflows({ repoPath, token, owner, repo }) {
+module.exports.analyzeWorkflows = async function ({ repoPath, token, owner, repo }) {
   const workflowsDir = path.join(repoPath, ".github", "workflows");
   const jobsList = [];
 

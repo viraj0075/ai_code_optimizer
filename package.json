@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "GitHub Action that scans Terraform, YAML, JSON and application code for cloud cost optimization opportunities.",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "analyze": "node src/index.js --local",

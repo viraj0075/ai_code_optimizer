@@ -1,6 +1,6 @@
-import {
+const {
   buildCostOptimizationPrompt,
-} from "./prompts.js";
+} = require("./prompts.js");
 
 export async function optimizeGitHubCosts(data) {
   if (!process.env.OPENROUTER_API_KEY) {

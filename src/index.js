@@ -1,12 +1,12 @@
-import "dotenv/config";
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { analyzeRepository } from "./analyzer.js";
-import { analyzeWorkflows, calculateCosts } from "./analyzer/index.js";
-import { optimizeGitHubCosts } from "./ai/index.js";
-import { createPRComment, formatAIComment } from "./github/index.js";
+require("dotenv/config");
+
+const core = require("@actions/core");
+const github = require("@actions/github");
+
+const { analyzeRepository } = require("./analyzer.js");
+const { analyzeWorkflows, calculateCosts } = require("./analyzer/index.js");
+const { optimizeGitHubCosts } = require("./ai/index.js");
+const { createPRComment, formatAIComment } = require("./github/index.js");
 
 async function main() {
   const isLocal = process.argv.includes("--local") || !process.env.GITHUB_ACTIONS;
