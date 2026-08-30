@@ -1,0 +1,21 @@
+name: GitHub Cost Optimizer
+description: Analyze repositories for cloud cost optimization opportunities and post a PR review.
+author: GitHub Cost Optimizer
+branding:
+  icon: dollar-sign
+  color: green
+
+inputs:
+  github-token:
+    description: GitHub token used to read PR information and post comments.
+    required: true
+    default: ${{ github.token }}
+
+  fail-on:
+    description: "Optional severity that should fail the action: critical, high, medium, low, or none."
+    required: false
+    default: none
+
+runs:
+  using: node20
+  main: dist/index.js

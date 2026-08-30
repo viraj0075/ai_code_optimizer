@@ -1,0 +1,29 @@
+name: Cost Optimizer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  cost-analysis:
+    name: Analyze cloud cost
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GitHub Cost Optimizer
+        uses: viraj0075/github-cost-optimizer@main
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: nvidia/nemotron-3.5-lightning:free
+          OPENROUTER_URL: https://openrouter.ai/api/v1/chat/completions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on: none
