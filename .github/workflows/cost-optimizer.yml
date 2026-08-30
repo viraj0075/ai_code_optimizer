@@ -12,16 +12,18 @@ jobs:
   cost-analysis:
     name: Analyze cloud cost
     runs-on: ubuntu-latest
-
+      env:
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run GitHub Cost Optimizer
-        uses: viraj0075/github-cost-optimizer@main
+        uses: viraj0075/github-cost-optimizer@v1
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL: nvidia/nemotron-3.5-lightning:free
+          OPENROUTER_MODEL: google/gemini-2.5-flash
           OPENROUTER_URL: https://openrouter.ai/api/v1/chat/completions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
