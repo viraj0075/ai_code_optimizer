@@ -1,4 +1,4 @@
-module.exports.formatAIComment = function (result) {
+export function formatAIComment(result) {
   let comment = `## 🤖 AI Cost Optimizer
 
 ### 📊 Cost Analysis

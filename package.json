@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "github-cost-optimizer",
   "version": "1.0.0",
   "description": "GitHub Action that scans Terraform, YAML, JSON and application code for cloud cost optimization opportunities.",
@@ -6,7 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "analyze": "node src/index.js --local",
-    "package": "ncc build src/index.js --license licenses.txt -o dist && node -e \"require('fs').writeFileSync('dist/package.json', JSON.stringify({type:'commonjs'}, null, 2))\""
+    "package": "esbuild src/index.js --bundle --platform=node --target=node24 --outfile=dist/index.cjs"
   },
   "keywords": [
     "github-actions",
@@ -23,6 +24,6 @@
     "js-yaml": "^5.4.1"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.3"
+    "esbuild": "^0.28.2"
   }
 }

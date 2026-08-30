@@ -1,5 +1,5 @@
-const fs = require("node:fs");
-const path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 
 const SUPPORTED_EXTENSIONS = new Set([
   ".tf", ".tfvars", ".yaml", ".yml", ".json",
@@ -11,7 +11,7 @@ const IGNORED_DIRECTORIES = new Set([
   "coverage", ".terraform", ".venv", "venv"
 ]);
 
-module.exports.analyzeRepository = function (root) {
+export function analyzeRepository(root) {
   const files = collectFiles(root);
   const issues = [];
 

@@ -1,4 +1,4 @@
-module.exports.optimizeGitHubCosts = async function (data) {
+export function buildCostOptimizationPrompt(data) {
   return `
 You are an expert GitHub Actions and CI/CD
 cost optimization AI.

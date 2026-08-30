@@ -1,3 +1,3 @@
-module.exports = {
-  optimizeGitHubCosts: require("./costOptimizer.js").optimizeGitHubCosts
-};
+export {
+  optimizeGitHubCosts,
+} from "./costOptimizer.js";
