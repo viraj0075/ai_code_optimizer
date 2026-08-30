@@ -2,7 +2,7 @@ const {
   buildCostOptimizationPrompt,
 } = require("./prompts.js");
 
-export async function optimizeGitHubCosts(data) {
+module.exports.optimizeGitHubCosts = async function (data) {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error(
       "OPENROUTER_API_KEY is missing."

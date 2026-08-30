@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "analyze": "node src/index.js --local",
-    "package": "ncc build src/index.js --license licenses.txt -o dist"
+    "package": "ncc build src/index.js --license licenses.txt -o dist && node -e \"require('fs').writeFileSync('dist/package.json', JSON.stringify({type:'commonjs'}, null, 2))\""
   },
   "keywords": [
     "github-actions",
