@@ -12,9 +12,10 @@ jobs:
   cost-analysis:
     name: Analyze cloud cost
     runs-on: ubuntu-latest
-      env:
+
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

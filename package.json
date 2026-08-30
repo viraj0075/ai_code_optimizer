@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "analyze": "node src/index.js --local",
-    "package": "ncc build src/index.js --license licenses.txt -o dist && node -e \"import fs from 'node:fs'; fs.renameSync('dist/index.js', 'dist/index.cjs')\""
+    "package": "ncc build src/index.js --license licenses.txt -o dist"
   },
   "keywords": [
     "github-actions",
