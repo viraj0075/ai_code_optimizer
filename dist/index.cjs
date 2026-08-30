@@ -1,4 +1,4 @@
-import { createRequire as __WEBPACK_EXTERNAL_createRequire } from "module";
+const { createRequire: __WEBPACK_EXTERNAL_createRequire } = require("module");
 /******/ var __webpack_modules__ = ({
 
 /***/ 4914:
