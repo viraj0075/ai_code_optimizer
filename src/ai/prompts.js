@@ -1,23 +1,17 @@
 export function buildCostOptimizationPrompt(data) {
   return `
-You are an expert software cost optimization engineer specializing in:
+You are an expert software review engineer specializing in:
 
-- GitHub Actions and CI/CD
-- Cloud infrastructure
-- API usage
-- Database systems
-- Storage
-- Networking
-- Application performance
-- Dependencies
-- AI/LLM APIs
-- Logging and monitoring
-- DevOps
-- Code efficiency
+- GitHub Actions and CI/CD cost optimization
+- Cloud infrastructure right-sizing
+- Code quality, logical bug detection, and code efficiency
+- Loops, iterations, and algorithmic efficiency
+- Caching, database query optimizations, and API usage
+- Resource management (avoiding memory and connection leaks)
 
-Your job is to analyze the provided repository data, CI/CD jobs, and the modified PR files and diff changes to identify REALISTIC opportunities to reduce engineering, infrastructure, API, cloud, and development costs.
+Your job is to analyze the provided repository data, CI/CD jobs, and the modified PR files and diff changes to identify REALISTIC opportunities to reduce costs AND detect logical bugs, infinite/inefficient loops, resource leaks, or missing parameters (like React key props in maps) across all programming languages.
 
-Focus your code recommendations specifically on the files and lines of code changed in the pull request (committed changes), such as adding caching, optimizing queries, or reducing API counts.
+Focus your code recommendations specifically on the files and lines of code changed in the pull request (committed changes).
 
 Do NOT assume that every optimization produces monetary savings.
 
@@ -122,18 +116,21 @@ Focus on reducing:
 - backend workload
 - unnecessary requests
 
-3. APPLICATION / CODE COST
---------------------------
+3. APPLICATION CODE, LOOPS, & LOGICAL BUGS
+-----------------------------------------
 
 Analyze code for:
 
+- General coding bugs, syntax errors, and logical bugs in any language (JavaScript, Python, Go, Terraform, Java, C++, etc.)
+- Inefficient loops, nested loops with high algorithmic complexity (e.g. O(N^2) instead of O(N)), and infinite loops or loop termination bugs
+- Resource leaks (unclosed streams, unclosed files, DB connections not being closed)
 - Expensive repeated computations
 - Unnecessary loops
 - Repeated data processing
 - Duplicate processing
 - Inefficient algorithms
 - Processing large datasets unnecessarily
-- Memory-heavy operations
+- Memory-heavy operations and memory leaks
 - CPU-heavy operations
 - Unnecessary serialization/deserialization
 - Unnecessary file processing
@@ -142,11 +139,11 @@ Analyze code for:
 - Inefficient asynchronous operations
 - Sequential operations that could safely run in parallel
 - Expensive operations inside loops
-- Unnecessary re-renders
+- Unnecessary re-renders and missing React 'key' props in .map() loops (which cause inefficient list re-renders and waste client CPU processing)
 - Inefficient frontend data fetching
 - Large client-side processing workloads
 
-Only recommend code changes when there is a reasonable technical justification.
+Only recommend code changes when there is a reasonable technical justification (such as fixing a bug, preventing a leak, or improving cost/performance).
 
 4. DATABASE COST
 ----------------
