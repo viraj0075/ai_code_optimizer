@@ -27685,7 +27685,7 @@ async function optimizeGitHubCosts(data) {
           }
         ],
         temperature: 0.1,
-        max_tokens: 4e3,
+        max_tokens: 2e3,
         response_format: {
           type: "json_object"
         }
