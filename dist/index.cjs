@@ -27864,6 +27864,30 @@ ${diffContent}
 }
 
 // src/index.js
+function shouldAnalyzeFile(filename) {
+  const ext = import_node_path3.default.extname(filename).toLowerCase();
+  const SUPPORTED_EXTENSIONS2 = /* @__PURE__ */ new Set([
+    ".tf",
+    ".tfvars",
+    ".yaml",
+    ".yml",
+    ".json",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".py",
+    ".go"
+  ]);
+  const IGNORED_FILES = /* @__PURE__ */ new Set([
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "dist/index.cjs"
+  ]);
+  if (IGNORED_FILES.has(filename) || filename.includes("node_modules/") || filename.includes("dist/")) return false;
+  return SUPPORTED_EXTENSIONS2.has(ext);
+}
 async function main() {
   const isLocal = process.argv.includes("--local") || !process.env.GITHUB_ACTIONS;
   let token = null;
@@ -27916,6 +27940,7 @@ async function main() {
       if (filesResponse.ok) {
         const filesData = await filesResponse.json();
         for (const file of filesData) {
+          if (!shouldAnalyzeFile(file.filename)) continue;
           const filePath = import_node_path3.default.join(repoPath, file.filename);
           let content = "";
           try {
@@ -27942,16 +27967,18 @@ async function main() {
       const { execSync } = await import("child_process");
       const gitFiles = execSync("git diff --name-only HEAD~1", { encoding: "utf8" }).split("\n").filter(Boolean);
       for (const file of gitFiles) {
-        const filePath = import_node_path3.default.join(repoPath, file.trim());
+        const trimmed = file.trim();
+        if (!shouldAnalyzeFile(trimmed)) continue;
+        const filePath = import_node_path3.default.join(repoPath, trimmed);
         let content = "";
         let patch = "";
         try {
           content = await import_promises.default.readFile(filePath, "utf8");
-          patch = execSync(`git diff HEAD~1 -- "${file.trim()}"`, { encoding: "utf8" });
+          patch = execSync(`git diff HEAD~1 -- "${trimmed}"`, { encoding: "utf8" });
         } catch (e) {
         }
         prFiles.push({
-          filename: file.trim(),
+          filename: trimmed,
           patch,
           content
         });

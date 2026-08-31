@@ -8,6 +8,19 @@ import { analyzeWorkflows, calculateCosts } from "./analyzer/index.js";
 import { optimizeGitHubCosts } from "./ai/index.js";
 import { createPRComment, formatAIComment } from "./github/index.js";
 
+function shouldAnalyzeFile(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  const SUPPORTED_EXTENSIONS = new Set([
+    ".tf", ".tfvars", ".yaml", ".yml", ".json",
+    ".js", ".jsx", ".ts", ".tsx", ".py", ".go"
+  ]);
+  const IGNORED_FILES = new Set([
+    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "dist/index.cjs"
+  ]);
+  if (IGNORED_FILES.has(filename) || filename.includes("node_modules/") || filename.includes("dist/")) return false;
+  return SUPPORTED_EXTENSIONS.has(ext);
+}
+
 async function main() {
   const isLocal = process.argv.includes("--local") || !process.env.GITHUB_ACTIONS;
   
@@ -70,6 +83,7 @@ async function main() {
       if (filesResponse.ok) {
         const filesData = await filesResponse.json();
         for (const file of filesData) {
+          if (!shouldAnalyzeFile(file.filename)) continue;
           const filePath = path.join(repoPath, file.filename);
           let content = "";
           try {
@@ -98,15 +112,17 @@ async function main() {
         .split("\n")
         .filter(Boolean);
       for (const file of gitFiles) {
-        const filePath = path.join(repoPath, file.trim());
+        const trimmed = file.trim();
+        if (!shouldAnalyzeFile(trimmed)) continue;
+        const filePath = path.join(repoPath, trimmed);
         let content = "";
         let patch = "";
         try {
           content = await fs.readFile(filePath, "utf8");
-          patch = execSync(`git diff HEAD~1 -- "${file.trim()}"`, { encoding: "utf8" });
+          patch = execSync(`git diff HEAD~1 -- "${trimmed}"`, { encoding: "utf8" });
         } catch (e) {}
         prFiles.push({
-          filename: file.trim(),
+          filename: trimmed,
           patch,
           content
         });
