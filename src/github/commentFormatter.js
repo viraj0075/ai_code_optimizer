@@ -21,14 +21,9 @@ ${rec.description}
 
   if (suggestedCode) {
     body += `
-<details>
-<summary>▶️ Committable suggestion</summary>
-
 \`\`\`suggestion
 ${suggestedCode}
 \`\`\`
-
-</details>
 `;
   }
 
