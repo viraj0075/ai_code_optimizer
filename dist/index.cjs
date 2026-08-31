@@ -27837,15 +27837,15 @@ ${result.summary}
 `;
       }
       if (diffContent) {
-        comment += `>
-> <details>
-> <summary>\u25B6\uFE0F Committable suggestion</summary>
->
-> \`\`\`diff
+        comment += `
+<details>
+<summary>\u25B6\uFE0F Committable suggestion</summary>
+
+\`\`\`diff
 ${diffContent}
 \`\`\`
->
-> </details>
+
+</details>
 `;
       }
     });
