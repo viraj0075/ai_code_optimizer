@@ -52,22 +52,86 @@ async function main() {
   if (rawJobs.length === 0) {
     console.log("⚠️ No workflow files found in .github/workflows/");
   }
+  // 2. Fetch changed files and diffs (from PR or local git fallback)
+  let prFiles = [];
+  if (token && owner && repo && issueNumber) {
+    try {
+      console.log(`🔍 Fetching changed files for PR #${issueNumber}...`);
+      const filesResponse = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/pulls/${issueNumber}/files`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+          }
+        }
+      );
+      if (filesResponse.ok) {
+        const filesData = await filesResponse.json();
+        for (const file of filesData) {
+          const filePath = path.join(repoPath, file.filename);
+          let content = "";
+          try {
+            content = await fs.readFile(filePath, "utf8");
+          } catch (e) {
+            console.log(`⚠️ Could not read file content for ${file.filename}:`, e.message);
+          }
+          prFiles.push({
+            filename: file.filename,
+            patch: file.patch || "",
+            content
+          });
+        }
+        console.log(`🔍 Successfully retrieved ${prFiles.length} files from PR.`);
+      } else {
+        const errMsg = await filesResponse.text();
+        console.warn(`⚠️ Warning: Failed to fetch PR files:`, errMsg);
+      }
+    } catch (err) {
+      console.warn("⚠️ Warning: Error fetching PR files:", err.message);
+    }
+  } else if (isLocal) {
+    try {
+      const { execSync } = await import("child_process");
+      const gitFiles = execSync("git diff --name-only HEAD~1", { encoding: "utf8" })
+        .split("\n")
+        .filter(Boolean);
+      for (const file of gitFiles) {
+        const filePath = path.join(repoPath, file.trim());
+        let content = "";
+        let patch = "";
+        try {
+          content = await fs.readFile(filePath, "utf8");
+          patch = execSync(`git diff HEAD~1 -- "${file.trim()}"`, { encoding: "utf8" });
+        } catch (e) {}
+        prFiles.push({
+          filename: file.trim(),
+          patch,
+          content
+        });
+      }
+    } catch (e) {
+      // Ignore git errors
+    }
+  }
 
-  // 2. Calculate execution costs
+  // 3. Calculate execution costs
   const costAnalysis = calculateCosts(rawJobs);
   console.log(`💰 Current calculated CI/CD cost: $${costAnalysis.totalCost.toFixed(2)}`);
 
   let commentBody = "";
   let aiResult = null;
 
-  // 3. AI Cost Optimization via OpenRouter
+  // 4. AI Cost Optimization via OpenRouter
   if (process.env.OPENROUTER_API_KEY) {
     console.log("🤖 Requesting cost optimization recommendations from AI...");
     try {
       aiResult = await optimizeGitHubCosts({
         repository: process.env.GITHUB_REPOSITORY || `${owner}/${repo}` || "Unknown",
         jobs: costAnalysis.jobs,
-        totalCost: costAnalysis.totalCost
+        totalCost: costAnalysis.totalCost,
+        prFiles
       });
 
       console.log("🤖 AI analysis completed successfully!");

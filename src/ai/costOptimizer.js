@@ -43,6 +43,8 @@ export async function optimizeGitHubCosts(data) {
       totalCost,
 
       jobs,
+
+      prFiles: data.prFiles || [],
     });
 
   const response = await fetch(
