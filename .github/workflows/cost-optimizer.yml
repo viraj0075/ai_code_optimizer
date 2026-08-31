@@ -1,4 +1,4 @@
-name: Cost Optimizer
+name: Coin Care
 
 on:
   pull_request:

@@ -1,5 +1,5 @@
-name: GitHub Cost Optimizer
-description: Analyze repositories for cloud cost optimization opportunities and post a PR review.
+name: Coin Care
+description: AI Cost Optimizer bot that reviews PRs and suggests code optimizations.
 author: GitHub Cost Optimizer
 branding:
   icon: dollar-sign
