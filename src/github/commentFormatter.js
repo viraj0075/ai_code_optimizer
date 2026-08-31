@@ -1,3 +1,40 @@
+export function formatRecommendationComment(rec) {
+  const icon = rec.impact === "high" ? "🔴 Major" :
+               rec.impact === "medium" ? "🟡 Medium" : "🟢 Minor";
+
+  let suggestedCode = "";
+  const fixCode = rec.suggestedCode || rec.codeFix || rec.yaml;
+  if (typeof fixCode === "string") {
+    suggestedCode = fixCode;
+  } else if (Array.isArray(fixCode)) {
+    suggestedCode = fixCode.join("\n");
+  }
+
+  let body = `### ⚠️ Potential cost optimization | ${icon}
+
+**${rec.title}**
+
+${rec.description}
+
+💰 **If you optimize this, you save:** $${rec.estimatedSavings || 0}/mo
+`;
+
+  if (suggestedCode) {
+    body += `
+<details>
+<summary>▶️ Committable suggestion</summary>
+
+\`\`\`suggestion
+${suggestedCode}
+\`\`\`
+
+</details>
+`;
+  }
+
+  return body;
+}
+
 export function formatAIComment(result) {
   let comment = `## 🪙 Coin Care
  
@@ -13,81 +50,6 @@ export function formatAIComment(result) {
  
 ${result.summary}
 `;
-
-  if (result.recommendations?.length) {
-    result.recommendations.forEach((recommendation, index) => {
-      const file = recommendation.filePath || recommendation.workflow;
-      
-      let originalLines = [];
-      if (typeof recommendation.originalCode === "string") {
-        originalLines = recommendation.originalCode.split(/\r?\n/);
-      } else if (Array.isArray(recommendation.originalCode)) {
-        originalLines = recommendation.originalCode;
-      }
-
-      let suggestedLines = [];
-      const fixCode = recommendation.suggestedCode || recommendation.codeFix || recommendation.yaml;
-      if (typeof fixCode === "string") {
-        suggestedLines = fixCode.split(/\r?\n/);
-      } else if (Array.isArray(fixCode)) {
-        suggestedLines = fixCode;
-      }
-
-      const startLine = Number(recommendation.startLine) || 1;
-      const context = recommendation.lineContext || "";
-      const originalCount = originalLines.length;
-      const suggestedCount = suggestedLines.length;
-
-      let hunkHeader = "";
-      if (originalCount > 0 || suggestedCount > 0) {
-        hunkHeader = `@@ -${startLine},${originalCount} +${startLine},${suggestedCount} @@${context ? " " + context : ""}\n`;
-      }
-
-      let diffContent = hunkHeader;
-      if (originalCount > 0) {
-        diffContent += originalLines.map(line => `-${line}`).join("\n");
-      }
-      if (suggestedCount > 0) {
-        if (originalCount > 0) diffContent += "\n";
-        diffContent += suggestedLines.map(line => `+${line}`).join("\n");
-      }
-
-      const icon = recommendation.impact === "high" ? "🔴 Major" :
-                   recommendation.impact === "medium" ? "🟡 Medium" : "🟢 Minor";
-
-      comment += `
-
----
-
-> ### ⚠️ Potential cost optimization | ${icon}
->
-> **${recommendation.title}**
->
-> 💰 **If you optimize this, you save:** $${recommendation.estimatedSavings || 0}/mo
->
-> ${recommendation.description}
-`;
-
-      if (file) {
-        comment += `>
-> **File:** \`${file}\`
-`;
-      }
-
-      if (diffContent) {
-        comment += `
-<details>
-<summary>▶️ Committable suggestion</summary>
-
-\`\`\`diff
-${diffContent}
-\`\`\`
-
-</details>
-`;
-      }
-    });
-  }
 
   comment += `
 

@@ -6,7 +6,7 @@ import path from "node:path";
 import { analyzeRepository } from "./analyzer.js";
 import { analyzeWorkflows, calculateCosts } from "./analyzer/index.js";
 import { optimizeGitHubCosts } from "./ai/index.js";
-import { createPRComment, formatAIComment } from "./github/index.js";
+import { createPRComment, createPRReview, formatAIComment, formatRecommendationComment } from "./github/index.js";
 
 function shouldAnalyzeFile(filename) {
   const ext = path.extname(filename).toLowerCase();
@@ -171,18 +171,63 @@ async function main() {
     
     // Post to Pull Request if running in a GitHub Action pull request context
     if (!isLocal && token && (github.context.eventName === "pull_request" || issueNumber)) {
-      console.log(`💬 Posting AI recommendation comment to PR #${issueNumber}...`);
-      await createPRComment({
+      console.log(`💬 Posting AI PR Review and suggestions to PR #${issueNumber}...`);
+      
+      const commitId = github.context.payload.pull_request?.head?.sha || github.context.sha;
+      const comments = [];
+      let reviewBody = commentBody;
+
+      if (aiResult.recommendations?.length) {
+        const generalRecs = [];
+        aiResult.recommendations.forEach((rec) => {
+          const filePath = rec.filePath || rec.workflow;
+          const startLine = Number(rec.startLine);
+          if (filePath && !isNaN(startLine)) {
+            comments.push({
+              path: filePath,
+              line: startLine,
+              side: "RIGHT",
+              body: formatRecommendationComment(rec)
+            });
+          } else {
+            generalRecs.push(rec);
+          }
+        });
+
+        if (generalRecs.length > 0) {
+          reviewBody += "\n\n### 💡 Additional Recommendations\n";
+          generalRecs.forEach((rec) => {
+            reviewBody += `\n---\n\n> #### ⚠️ Potential cost optimization | ${rec.impact === "high" ? "🔴 Major" : rec.impact === "medium" ? "🟡 Medium" : "🟢 Minor"}\n>\n> **${rec.title}**\n>\n> ${rec.description}\n>\n> 💰 **If you optimize this, you save:** $${rec.estimatedSavings || 0}/mo\n`;
+          });
+        }
+      }
+
+      await createPRReview({
         token,
         owner,
         repo,
-        issueNumber,
-        body: commentBody
+        pullNumber: issueNumber,
+        commitId,
+        body: reviewBody,
+        comments
       });
-      console.log("✅ Comment posted successfully!");
+      console.log("✅ PR review and inline comments posted successfully!");
     } else {
       console.log("\n--- Generated Markdown Comment (Console Output) ---");
-      console.log(commentBody);
+      let fullConsoleComment = commentBody;
+      if (aiResult.recommendations?.length) {
+        aiResult.recommendations.forEach((rec) => {
+          const blockContent = formatRecommendationComment(rec);
+          const formattedBlock = blockContent.split("\n").map(l => {
+            if (l.trim().startsWith("```") || l.trim().startsWith("+") || l.trim().startsWith("-")) {
+              return l;
+            }
+            return `> ${l}`;
+          }).join("\n");
+          fullConsoleComment += `\n\n---\n\n${formattedBlock}`;
+        });
+      }
+      console.log(fullConsoleComment);
     }
   } else {
     // Print the static repo scanner report

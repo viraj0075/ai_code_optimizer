@@ -27738,15 +27738,17 @@ async function optimizeGitHubCosts(data) {
 }
 
 // src/github/comment.js
-async function createPRComment({
+async function createPRReview({
   token,
   owner,
   repo,
-  issueNumber,
-  body
+  pullNumber,
+  commitId,
+  body,
+  comments
 }) {
   const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
     {
       method: "POST",
       headers: {
@@ -27756,20 +27758,54 @@ async function createPRComment({
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        body
+        commit_id: commitId,
+        event: "COMMENT",
+        body,
+        comments
       })
     }
   );
   if (!response.ok) {
     const error = await response.text();
     throw new Error(
-      `GitHub API error ${response.status}: ${error}`
+      `GitHub API error creating review ${response.status}: ${error}`
     );
   }
   return response.json();
 }
 
 // src/github/commentFormatter.js
+function formatRecommendationComment(rec) {
+  const icon = rec.impact === "high" ? "\u{1F534} Major" : rec.impact === "medium" ? "\u{1F7E1} Medium" : "\u{1F7E2} Minor";
+  let suggestedCode = "";
+  const fixCode = rec.suggestedCode || rec.codeFix || rec.yaml;
+  if (typeof fixCode === "string") {
+    suggestedCode = fixCode;
+  } else if (Array.isArray(fixCode)) {
+    suggestedCode = fixCode.join("\n");
+  }
+  let body = `### \u26A0\uFE0F Potential cost optimization | ${icon}
+
+**${rec.title}**
+
+${rec.description}
+
+\u{1F4B0} **If you optimize this, you save:** $${rec.estimatedSavings || 0}/mo
+`;
+  if (suggestedCode) {
+    body += `
+<details>
+<summary>\u25B6\uFE0F Committable suggestion</summary>
+
+\`\`\`suggestion
+${suggestedCode}
+\`\`\`
+
+</details>
+`;
+  }
+  return body;
+}
 function formatAIComment(result) {
   let comment = `## \u{1FA99} Coin Care
  
@@ -27785,71 +27821,6 @@ function formatAIComment(result) {
  
 ${result.summary}
 `;
-  if (result.recommendations?.length) {
-    result.recommendations.forEach((recommendation, index) => {
-      const file = recommendation.filePath || recommendation.workflow;
-      let originalLines = [];
-      if (typeof recommendation.originalCode === "string") {
-        originalLines = recommendation.originalCode.split(/\r?\n/);
-      } else if (Array.isArray(recommendation.originalCode)) {
-        originalLines = recommendation.originalCode;
-      }
-      let suggestedLines = [];
-      const fixCode = recommendation.suggestedCode || recommendation.codeFix || recommendation.yaml;
-      if (typeof fixCode === "string") {
-        suggestedLines = fixCode.split(/\r?\n/);
-      } else if (Array.isArray(fixCode)) {
-        suggestedLines = fixCode;
-      }
-      const startLine = Number(recommendation.startLine) || 1;
-      const context2 = recommendation.lineContext || "";
-      const originalCount = originalLines.length;
-      const suggestedCount = suggestedLines.length;
-      let hunkHeader = "";
-      if (originalCount > 0 || suggestedCount > 0) {
-        hunkHeader = `@@ -${startLine},${originalCount} +${startLine},${suggestedCount} @@${context2 ? " " + context2 : ""}
-`;
-      }
-      let diffContent = hunkHeader;
-      if (originalCount > 0) {
-        diffContent += originalLines.map((line) => `-${line}`).join("\n");
-      }
-      if (suggestedCount > 0) {
-        if (originalCount > 0) diffContent += "\n";
-        diffContent += suggestedLines.map((line) => `+${line}`).join("\n");
-      }
-      const icon = recommendation.impact === "high" ? "\u{1F534} Major" : recommendation.impact === "medium" ? "\u{1F7E1} Medium" : "\u{1F7E2} Minor";
-      comment += `
-
----
-
-> ### \u26A0\uFE0F Potential cost optimization | ${icon}
->
-> **${recommendation.title}**
->
-> \u{1F4B0} **If you optimize this, you save:** $${recommendation.estimatedSavings || 0}/mo
->
-> ${recommendation.description}
-`;
-      if (file) {
-        comment += `>
-> **File:** \`${file}\`
-`;
-      }
-      if (diffContent) {
-        comment += `
-<details>
-<summary>\u25B6\uFE0F Committable suggestion</summary>
-
-\`\`\`diff
-${diffContent}
-\`\`\`
-
-</details>
-`;
-      }
-    });
-  }
   comment += `
 
 ---
@@ -28009,18 +27980,73 @@ async function main() {
     console.log(`Estimated Savings: $${aiResult.estimatedSavings} (${aiResult.savingsPercentage}%)`);
     console.log(aiResult.summary);
     if (!isLocal && token && (github.context.eventName === "pull_request" || issueNumber)) {
-      console.log(`\u{1F4AC} Posting AI recommendation comment to PR #${issueNumber}...`);
-      await createPRComment({
+      console.log(`\u{1F4AC} Posting AI PR Review and suggestions to PR #${issueNumber}...`);
+      const commitId = github.context.payload.pull_request?.head?.sha || github.context.sha;
+      const comments = [];
+      let reviewBody = commentBody;
+      if (aiResult.recommendations?.length) {
+        const generalRecs = [];
+        aiResult.recommendations.forEach((rec) => {
+          const filePath = rec.filePath || rec.workflow;
+          const startLine = Number(rec.startLine);
+          if (filePath && !isNaN(startLine)) {
+            comments.push({
+              path: filePath,
+              line: startLine,
+              side: "RIGHT",
+              body: formatRecommendationComment(rec)
+            });
+          } else {
+            generalRecs.push(rec);
+          }
+        });
+        if (generalRecs.length > 0) {
+          reviewBody += "\n\n### \u{1F4A1} Additional Recommendations\n";
+          generalRecs.forEach((rec) => {
+            reviewBody += `
+---
+
+> #### \u26A0\uFE0F Potential cost optimization | ${rec.impact === "high" ? "\u{1F534} Major" : rec.impact === "medium" ? "\u{1F7E1} Medium" : "\u{1F7E2} Minor"}
+>
+> **${rec.title}**
+>
+> ${rec.description}
+>
+> \u{1F4B0} **If you optimize this, you save:** $${rec.estimatedSavings || 0}/mo
+`;
+          });
+        }
+      }
+      await createPRReview({
         token,
         owner,
         repo,
-        issueNumber,
-        body: commentBody
+        pullNumber: issueNumber,
+        commitId,
+        body: reviewBody,
+        comments
       });
-      console.log("\u2705 Comment posted successfully!");
+      console.log("\u2705 PR review and inline comments posted successfully!");
     } else {
       console.log("\n--- Generated Markdown Comment (Console Output) ---");
-      console.log(commentBody);
+      let fullConsoleComment = commentBody;
+      if (aiResult.recommendations?.length) {
+        aiResult.recommendations.forEach((rec) => {
+          const blockContent = formatRecommendationComment(rec);
+          const formattedBlock = blockContent.split("\n").map((l) => {
+            if (l.trim().startsWith("```") || l.trim().startsWith("+") || l.trim().startsWith("-")) {
+              return l;
+            }
+            return `> ${l}`;
+          }).join("\n");
+          fullConsoleComment += `
+
+---
+
+${formattedBlock}`;
+        });
+      }
+      console.log(fullConsoleComment);
     }
   } else {
     printConsoleReport(staticResult);

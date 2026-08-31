@@ -1,2 +1,2 @@
-export { createPRComment } from "./comment.js";
-export { formatAIComment } from "./commentFormatter.js";
+export { createPRComment, createPRReview } from "./comment.js";
+export { formatAIComment, formatRecommendationComment } from "./commentFormatter.js";
