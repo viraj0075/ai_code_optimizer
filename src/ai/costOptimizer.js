@@ -61,7 +61,7 @@ export async function optimizeGitHubCosts(data) {
           "https://github.com",
 
         "X-OpenRouter-Title":
-          "GitHub Cost Analyzer",
+          "Coin Care",
       },
 
       body: JSON.stringify({

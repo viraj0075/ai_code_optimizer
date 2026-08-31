@@ -27607,6 +27607,8 @@ Use exactly this structure:
       "impact": "high | medium | low",
       "estimatedSavings": 0,
       "filePath": "Relative path to target file (e.g. .github/workflows/ci.yml or src/db.js)",
+      "startLine": 42,
+      "lineContext": "The surrounding code context, like a function name or class signature (e.g., export async function createSession)",
       "originalCode": "The exact original line(s) of code to be replaced",
       "suggestedCode": "The replacement line(s) of code containing optimized parameters or code",
       "confidence": "high | medium | low"
@@ -27663,7 +27665,7 @@ async function optimizeGitHubCosts(data) {
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://github.com",
-        "X-OpenRouter-Title": "GitHub Cost Analyzer"
+        "X-OpenRouter-Title": "Coin Care"
       },
       body: JSON.stringify({
         model: MODEL,
@@ -27764,47 +27766,55 @@ async function createPRComment({
 
 // src/github/commentFormatter.js
 function formatAIComment(result) {
-  let comment = `## \u{1F916} AI Cost Optimizer
-
+  let comment = `## \u{1FA99} Coin Care
+ 
 ### \u{1F4CA} Cost Analysis
-
+ 
 | Metric | Value |
 |---|---:|
 | Current Cost | $${result.currentCost} |
 | Potential Savings | $${result.estimatedSavings} |
 | Possible Reduction | ${result.savingsPercentage}% |
-
-### \u{1F4A1} AI Recommendations
-
+ 
+### \u{1F4A1} Coin Care Recommendations
+ 
 ${result.summary}
 `;
   if (result.recommendations?.length) {
-    result.recommendations.forEach(
-      (recommendation, index) => {
-        const file = recommendation.filePath || recommendation.workflow;
-        let originalLines = [];
-        if (typeof recommendation.originalCode === "string") {
-          originalLines = recommendation.originalCode.split(/\r?\n/);
-        } else if (Array.isArray(recommendation.originalCode)) {
-          originalLines = recommendation.originalCode;
-        }
-        let suggestedLines = [];
-        const fixCode = recommendation.suggestedCode || recommendation.codeFix || recommendation.yaml;
-        if (typeof fixCode === "string") {
-          suggestedLines = fixCode.split(/\r?\n/);
-        } else if (Array.isArray(fixCode)) {
-          suggestedLines = fixCode;
-        }
-        let diffContent = "";
-        if (originalLines.length > 0) {
-          diffContent += originalLines.map((line) => `-${line}`).join("\n");
-        }
-        if (suggestedLines.length > 0) {
-          if (diffContent) diffContent += "\n";
-          diffContent += suggestedLines.map((line) => `+${line}`).join("\n");
-        }
-        const icon = recommendation.impact === "high" ? "\u{1F534} Major" : recommendation.impact === "medium" ? "\u{1F7E1} Medium" : "\u{1F7E2} Minor";
-        comment += `
+    result.recommendations.forEach((recommendation, index) => {
+      const file = recommendation.filePath || recommendation.workflow;
+      let originalLines = [];
+      if (typeof recommendation.originalCode === "string") {
+        originalLines = recommendation.originalCode.split(/\r?\n/);
+      } else if (Array.isArray(recommendation.originalCode)) {
+        originalLines = recommendation.originalCode;
+      }
+      let suggestedLines = [];
+      const fixCode = recommendation.suggestedCode || recommendation.codeFix || recommendation.yaml;
+      if (typeof fixCode === "string") {
+        suggestedLines = fixCode.split(/\r?\n/);
+      } else if (Array.isArray(fixCode)) {
+        suggestedLines = fixCode;
+      }
+      const startLine = Number(recommendation.startLine) || 1;
+      const context2 = recommendation.lineContext || "";
+      const originalCount = originalLines.length;
+      const suggestedCount = suggestedLines.length;
+      let hunkHeader = "";
+      if (originalCount > 0 || suggestedCount > 0) {
+        hunkHeader = `@@ -${startLine},${originalCount} +${startLine},${suggestedCount} @@${context2 ? " " + context2 : ""}
+`;
+      }
+      let diffContent = hunkHeader;
+      if (originalCount > 0) {
+        diffContent += originalLines.map((line) => `-${line}`).join("\n");
+      }
+      if (suggestedCount > 0) {
+        if (originalCount > 0) diffContent += "\n";
+        diffContent += suggestedLines.map((line) => `+${line}`).join("\n");
+      }
+      const icon = recommendation.impact === "high" ? "\u{1F534} Major" : recommendation.impact === "medium" ? "\u{1F7E1} Medium" : "\u{1F7E2} Minor";
+      comment += `
 
 ---
 
@@ -27812,30 +27822,35 @@ ${result.summary}
 
 **${recommendation.title}**
 
-${recommendation.description}
-
 \u{1F4B0} **If you optimize this, you save:** $${recommendation.estimatedSavings || 0}/mo
+
+${recommendation.description}
 `;
-        if (file) {
-          comment += `
+      if (file) {
+        comment += `
 **File:** \`${file}\`
 `;
-        }
-        if (diffContent) {
-          comment += `
+      }
+      if (diffContent) {
+        comment += `
+
+<details>
+<summary>\u25B6\uFE0F Committable suggestion</summary>
 
 \`\`\`diff
 ${diffContent}
 \`\`\`
+
+</details>
 `;
-        }
       }
-    );
+    });
   }
   comment += `
 
 ---
 
+> Generated by **Coin Care** using OpenRouter.
 `;
   return comment;
 }

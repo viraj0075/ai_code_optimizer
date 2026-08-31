@@ -400,6 +400,8 @@ Use exactly this structure:
       "impact": "high | medium | low",
       "estimatedSavings": 0,
       "filePath": "Relative path to target file (e.g. .github/workflows/ci.yml or src/db.js)",
+      "startLine": 42,
+      "lineContext": "The surrounding code context, like a function name or class signature (e.g., export async function createSession)",
       "originalCode": "The exact original line(s) of code to be replaced",
       "suggestedCode": "The replacement line(s) of code containing optimized parameters or code",
       "confidence": "high | medium | low"
